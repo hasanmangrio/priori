@@ -10,20 +10,24 @@ export default {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
-        clay:   '#E05540',   // terra cotta primary
-        ember:  '#C94830',   // terra cotta hover
-        ink:    '#1A1A1A',   // near-black text
-        mist:   '#888888',   // medium gray
-        fog:    '#C4C4C4',   // light gray
-        cream:  '#F5F0EB',   // warm page background
-        card:   '#FFFFFF',
-        line:   '#EAE5DF',   // warm border
+        clay:  '#E05540',
+        ember: '#C94830',
+        ink:   '#1E2240',
+        mist:  '#8B8FA8',
+        fog:   '#C8CAD8',
+        line:  '#ECEDF5',
+        card:  '#FFFFFF',
+        shell: '#F7F6FF',   // inner app bg tint
       },
       boxShadow: {
-        soft:    '0 2px 8px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.04)',
-        lift:    '0 4px 16px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.06)',
-        sheet:   '0 -4px 32px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.06)',
-        overlay: '0 20px 60px rgba(0,0,0,0.18)',
+        soft:    '0 1px 4px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.04)',
+        lift:    '0 4px 16px rgba(0,0,0,0.09), 0 1px 3px rgba(0,0,0,0.05)',
+        app:     '0 32px 80px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.1)',
+        sheet:   '0 -8px 40px rgba(0,0,0,0.14)',
+        overlay: '0 24px 64px rgba(0,0,0,0.18)',
+      },
+      borderRadius: {
+        app: '1.75rem',
       },
     },
   },
