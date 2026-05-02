@@ -10,17 +10,20 @@ export default {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
-        rausch: '#FF385C',   // Airbnb's primary red
-        hof:    '#E31C5F',   // Airbnb's hover red
-        foggy:  '#717171',   // medium gray
-        babu:   '#222222',   // near-black text
-        border: '#EBEBEB',   // light border
-        page:   '#F7F7F7',   // page background
+        clay:   '#E05540',   // terra cotta primary
+        ember:  '#C94830',   // terra cotta hover
+        ink:    '#1A1A1A',   // near-black text
+        mist:   '#888888',   // medium gray
+        fog:    '#C4C4C4',   // light gray
+        cream:  '#F5F0EB',   // warm page background
+        card:   '#FFFFFF',
+        line:   '#EAE5DF',   // warm border
       },
       boxShadow: {
-        card: '0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)',
-        'card-hover': '0 2px 4px rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.08)',
-        overlay: '0 8px 28px rgba(0,0,0,0.2)',
+        soft:    '0 2px 8px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.04)',
+        lift:    '0 4px 16px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.06)',
+        sheet:   '0 -4px 32px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.06)',
+        overlay: '0 20px 60px rgba(0,0,0,0.18)',
       },
     },
   },

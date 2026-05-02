@@ -13,7 +13,9 @@ export function TaskDetail({ task, onClose, onUpdate }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    textareaRef.current?.focus()
+    // Small delay so the sheet animation doesn't compete with keyboard on mobile
+    const t = setTimeout(() => textareaRef.current?.focus(), 50)
+    return () => clearTimeout(t)
   }, [])
 
   function handleChange(value: string) {
@@ -22,57 +24,53 @@ export function TaskDetail({ task, onClose, onUpdate }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+        className="absolute inset-0 bg-ink/30 backdrop-blur-[3px]"
         onClick={onClose}
       />
 
       {/* Sheet */}
-      <div
-        className="relative w-full sm:max-w-lg bg-white sm:rounded-3xl rounded-t-3xl p-6 z-10"
-        style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 4px 20px rgba(0,0,0,0.08)' }}
-      >
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-[#F3F0FF] hover:bg-[#E8E4FF] transition-colors text-foggy"
-          aria-label="Close"
-        >
-          <X size={15} strokeWidth={2.5} />
-        </button>
+      <div className="relative w-full sm:max-w-lg bg-card sm:rounded-3xl rounded-t-3xl z-10 shadow-sheet overflow-hidden">
 
-        {/* Label */}
-        <p className="text-[11px] font-semibold tracking-[0.12em] uppercase text-rausch mb-1.5">
-          Task
-        </p>
+        {/* Top accent bar */}
+        <div className="h-1 bg-clay w-full" />
 
-        {/* Task title */}
-        <h2 className="text-babu font-bold text-lg leading-snug pr-10 mb-6">
-          {task.text}
-        </h2>
+        <div className="p-6">
+          {/* Header row */}
+          <div className="flex items-start justify-between mb-5">
+            <div className="flex-1 pr-4">
+              <p className="text-[10px] font-bold tracking-[0.16em] uppercase text-clay mb-1">Task</p>
+              <h2 className="text-ink font-bold text-xl leading-snug">{task.text}</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-cream hover:bg-line transition-colors text-mist flex-shrink-0 mt-0.5"
+              aria-label="Close"
+            >
+              <X size={15} strokeWidth={2.5} />
+            </button>
+          </div>
 
-        {/* Notes */}
-        <label className="text-[11px] font-semibold tracking-[0.12em] uppercase text-foggy mb-2 block">
-          Notes
-        </label>
-        <textarea
-          ref={textareaRef}
-          value={description}
-          onChange={(e) => handleChange(e.target.value)}
-          placeholder="Add context, links, subtasks, or anything useful..."
-          rows={5}
-          className="w-full resize-none rounded-2xl px-4 py-3 text-sm text-babu placeholder-[#BBBBCC] focus:outline-none focus:ring-2 focus:ring-rausch leading-relaxed transition-shadow"
-          style={{ background: 'linear-gradient(145deg, #F5F3FF, #FFF5F7)' }}
-        />
+          {/* Notes */}
+          <p className="text-[10px] font-bold tracking-[0.16em] uppercase text-mist mb-2">Notes</p>
+          <textarea
+            ref={textareaRef}
+            value={description}
+            onChange={(e) => handleChange(e.target.value)}
+            placeholder="Add context, links, subtasks, or anything useful..."
+            rows={6}
+            className="w-full resize-none bg-cream rounded-2xl px-4 py-3.5 text-sm text-ink placeholder-fog focus:outline-none focus:ring-2 focus:ring-clay leading-relaxed border border-line"
+          />
 
-        <button
-          onClick={onClose}
-          className="mt-4 w-full py-3 bg-rausch hover:bg-hof active:scale-[0.98] text-white font-semibold rounded-2xl text-sm transition-all"
-        >
-          Done
-        </button>
+          <button
+            onClick={onClose}
+            className="mt-4 w-full py-3.5 bg-clay hover:bg-ember active:scale-[0.98] text-white font-bold rounded-2xl text-sm transition-all"
+          >
+            Save & Close
+          </button>
+        </div>
       </div>
     </div>
   )

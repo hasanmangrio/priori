@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X } from 'lucide-react'
+import { GripVertical, X, FileText } from 'lucide-react'
 import type { Task } from '../types'
 
 interface Props {
@@ -16,30 +16,26 @@ export function TaskCard({ task, rank, onDelete, onOpen }: Props) {
 
   const isPriority = rank !== undefined
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
+  const style = { transform: CSS.Transform.toString(transform), transition }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={`
-        flex items-center gap-3 px-4 py-3.5 rounded-2xl mb-2 group select-none
-        transition-all
+        flex items-center gap-3 rounded-2xl mb-2.5 group select-none transition-all
         ${isPriority
-          ? 'bg-white shadow-card hover:shadow-card-hover'
-          : 'bg-[#F7F7FB] hover:bg-white hover:shadow-card border border-[#EEEEF5]'
+          ? 'bg-card shadow-soft hover:shadow-lift px-4 py-3.5'
+          : 'bg-card border border-line hover:shadow-soft px-4 py-3'
         }
-        ${isDragging ? 'opacity-30' : 'opacity-100'}
+        ${isDragging ? 'opacity-30 scale-[0.98]' : 'opacity-100'}
       `}
     >
-      {/* Rank badge */}
+      {/* Rank — bold zero-padded number */}
       {isPriority && (
-        <div className="w-6 h-6 rounded-full bg-rausch flex items-center justify-center flex-shrink-0">
-          <span className="text-[11px] font-bold text-white leading-none">{rank}</span>
-        </div>
+        <span className="text-2xl font-bold text-clay leading-none w-8 flex-shrink-0 tabular-nums">
+          {String(rank).padStart(2, '0')}
+        </span>
       )}
 
       {/* Drag handle */}
@@ -47,29 +43,29 @@ export function TaskCard({ task, rank, onDelete, onOpen }: Props) {
         {...attributes}
         {...listeners}
         tabIndex={-1}
-        className="text-[#CCCCDD] hover:text-foggy cursor-grab active:cursor-grabbing flex-shrink-0 touch-none p-0.5 rounded transition-colors"
+        className="text-fog hover:text-mist cursor-grab active:cursor-grabbing flex-shrink-0 touch-none rounded transition-colors"
         aria-label="Drag to reorder"
       >
         <GripVertical size={15} strokeWidth={2} />
       </button>
 
-      {/* Task text — click opens detail */}
+      {/* Task text — tap/click opens notes */}
       <button
         onClick={() => onOpen(task.id)}
-        className={`flex-1 text-left text-sm leading-snug flex items-center gap-2 min-w-0 ${
-          isPriority ? 'text-babu font-medium' : 'text-foggy'
+        className={`flex-1 text-left leading-snug flex items-center gap-2 min-w-0 ${
+          isPriority ? 'text-ink font-semibold text-sm' : 'text-ink/70 text-sm font-medium'
         }`}
       >
         <span className="truncate">{task.text}</span>
         {task.description && (
-          <span className="w-1.5 h-1.5 rounded-full bg-rausch/30 flex-shrink-0" />
+          <FileText size={11} className="flex-shrink-0 text-clay/50" />
         )}
       </button>
 
       {/* Delete */}
       <button
         onClick={() => onDelete(task.id)}
-        className="flex-shrink-0 text-[#CCCCDD] hover:text-rausch transition-colors p-0.5 rounded opacity-0 group-hover:opacity-100 focus:opacity-100"
+        className="flex-shrink-0 text-fog hover:text-clay transition-colors p-0.5 rounded opacity-0 group-hover:opacity-100 focus:opacity-100"
         aria-label="Delete task"
       >
         <X size={14} strokeWidth={2.5} />
