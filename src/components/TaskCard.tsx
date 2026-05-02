@@ -7,9 +7,10 @@ interface Props {
   task: Task
   rank?: number
   onDelete: (id: string) => void
+  onOpen: (id: string) => void
 }
 
-export function TaskCard({ task, rank, onDelete }: Props) {
+export function TaskCard({ task, rank, onDelete, onOpen }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id })
 
@@ -25,9 +26,12 @@ export function TaskCard({ task, rank, onDelete }: Props) {
       ref={setNodeRef}
       style={style}
       className={`
-        flex items-center gap-3 px-4 py-3.5 rounded-2xl mb-2.5 group select-none
-        bg-white transition-shadow
-        ${isPriority ? 'shadow-card hover:shadow-card-hover' : 'border border-border hover:shadow-card'}
+        flex items-center gap-3 px-4 py-3.5 rounded-2xl mb-2 group select-none
+        transition-all
+        ${isPriority
+          ? 'bg-white shadow-card hover:shadow-card-hover'
+          : 'bg-[#F7F7FB] hover:bg-white hover:shadow-card border border-[#EEEEF5]'
+        }
         ${isDragging ? 'opacity-30' : 'opacity-100'}
       `}
     >
@@ -43,25 +47,29 @@ export function TaskCard({ task, rank, onDelete }: Props) {
         {...attributes}
         {...listeners}
         tabIndex={-1}
-        className="text-[#DDDDDD] hover:text-foggy cursor-grab active:cursor-grabbing flex-shrink-0 touch-none p-0.5 rounded transition-colors"
+        className="text-[#CCCCDD] hover:text-foggy cursor-grab active:cursor-grabbing flex-shrink-0 touch-none p-0.5 rounded transition-colors"
         aria-label="Drag to reorder"
       >
         <GripVertical size={15} strokeWidth={2} />
       </button>
 
-      {/* Task text */}
-      <span
-        className={`flex-1 text-sm leading-snug ${
+      {/* Task text — click opens detail */}
+      <button
+        onClick={() => onOpen(task.id)}
+        className={`flex-1 text-left text-sm leading-snug flex items-center gap-2 min-w-0 ${
           isPriority ? 'text-babu font-medium' : 'text-foggy'
         }`}
       >
-        {task.text}
-      </span>
+        <span className="truncate">{task.text}</span>
+        {task.description && (
+          <span className="w-1.5 h-1.5 rounded-full bg-rausch/30 flex-shrink-0" />
+        )}
+      </button>
 
       {/* Delete */}
       <button
         onClick={() => onDelete(task.id)}
-        className="flex-shrink-0 text-[#DDDDDD] hover:text-rausch transition-colors p-0.5 rounded opacity-0 group-hover:opacity-100 focus:opacity-100"
+        className="flex-shrink-0 text-[#CCCCDD] hover:text-rausch transition-colors p-0.5 rounded opacity-0 group-hover:opacity-100 focus:opacity-100"
         aria-label="Delete task"
       >
         <X size={14} strokeWidth={2.5} />

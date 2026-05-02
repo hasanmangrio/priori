@@ -16,6 +16,7 @@ import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-ki
 import { Plus } from 'lucide-react'
 import type { AppState, ContainerId, Task } from './types'
 import { TaskCard } from './components/TaskCard'
+import { TaskDetail } from './components/TaskDetail'
 
 const MAX_PRIORITIES = 5
 const STORAGE_KEY = 'priori-v1'
@@ -56,6 +57,7 @@ export default function App() {
   const [state, setState] = useState<AppState>(loadState)
   const [newTaskText, setNewTaskText] = useState('')
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const stateRef = useRef(state)
@@ -157,6 +159,19 @@ export default function App() {
     }))
   }
 
+  function updateTaskDescription(id: string, description: string) {
+    setState((prev) => {
+      const update = (list: Task[]) =>
+        list.map((t) => (t.id === id ? { ...t, description } : t))
+      return { priorities: update(prev.priorities), backlog: update(prev.backlog) }
+    })
+  }
+
+  const selectedTask =
+    selectedTaskId !== null
+      ? [...state.priorities, ...state.backlog].find((t) => t.id === selectedTaskId) ?? null
+      : null
+
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -167,22 +182,23 @@ export default function App() {
   const atCap = prioritiesCount >= MAX_PRIORITIES
 
   return (
-    <div className="min-h-screen bg-page font-sans">
+    <div className="min-h-screen font-sans" style={{ background: 'linear-gradient(145deg, #ECEDF8 0%, #F3F0FF 40%, #FDF6FF 70%, #FFF8F0 100%)' }}>
+
       {/* ── Header ── */}
-      <header className="bg-white border-b border-border px-6 py-5">
+      <header className="px-6 pt-8 pb-4">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-babu tracking-tight">priori</h1>
-              <span className="w-2 h-2 rounded-full bg-rausch" />
+              <h1 className="text-2xl font-bold text-babu tracking-tight">priori</h1>
+              <span className="w-2 h-2 rounded-full bg-rausch mt-0.5" />
             </div>
             <p className="text-foggy text-xs mt-0.5 font-medium">{today}</p>
           </div>
           <span
-            className={`text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
+            className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
               atCap
-                ? 'bg-rausch text-white'
-                : 'bg-page text-foggy border border-border'
+                ? 'bg-rausch text-white shadow-sm'
+                : 'bg-white/70 text-foggy border border-white shadow-sm backdrop-blur-sm'
             }`}
           >
             {prioritiesCount} / {MAX_PRIORITIES}
@@ -190,7 +206,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-7">
+      <main className="max-w-lg mx-auto px-4 pb-10">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -198,22 +214,22 @@ export default function App() {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          {/* ── Today's Focus ── */}
-          <section className="mb-2">
-            <h2 className="text-[11px] font-semibold tracking-[0.12em] uppercase text-rausch mb-3">
-              Today's Focus
-            </h2>
+          {/* ── Today's Focus card ── */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-card mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[11px] font-semibold tracking-[0.12em] uppercase text-rausch">
+                Today's Focus
+              </h2>
+            </div>
 
-            <DroppableContainer id="priorities" className="min-h-[72px]">
+            <DroppableContainer id="priorities" className="min-h-[64px]">
               <SortableContext
                 items={state.priorities.map((t) => t.id)}
                 strategy={verticalListSortingStrategy}
               >
                 {state.priorities.length === 0 ? (
-                  <div className="rounded-2xl border-2 border-dashed border-[#FFCDD6] bg-[#FFF5F7] p-8 text-center">
-                    <p className="text-sm text-foggy">
-                      Drag your most important tasks here
-                    </p>
+                  <div className="rounded-2xl border-2 border-dashed border-[#FFCDD6] bg-[#FFF5F7]/60 p-7 text-center">
+                    <p className="text-sm text-foggy">Drag your most important tasks here</p>
                   </div>
                 ) : (
                   state.priorities.map((task, i) => (
@@ -222,39 +238,40 @@ export default function App() {
                       task={task}
                       rank={i + 1}
                       onDelete={deleteTask}
+                      onOpen={setSelectedTaskId}
                     />
                   ))
                 )}
               </SortableContext>
             </DroppableContainer>
-          </section>
+          </div>
 
           {/* ── The Line ── */}
-          <div className="flex items-center gap-3 py-6">
-            <div className="flex-1 h-px bg-border" />
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-white shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#DDDDDD]" />
+          <div className="flex items-center gap-3 py-2 px-2 mb-4">
+            <div className="flex-1 h-px bg-white/60" />
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 backdrop-blur-sm shadow-sm border border-white">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D0D0E0]" />
               <span className="text-[10px] font-bold tracking-[0.18em] uppercase text-foggy select-none">
                 The Line
               </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#DDDDDD]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D0D0E0]" />
             </div>
-            <div className="flex-1 h-px bg-border" />
+            <div className="flex-1 h-px bg-white/60" />
           </div>
 
-          {/* ── Everything Else ── */}
-          <section>
-            <h2 className="text-[11px] font-semibold tracking-[0.12em] uppercase text-foggy mb-3">
+          {/* ── Everything Else card ── */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-5 shadow-card">
+            <h2 className="text-[11px] font-semibold tracking-[0.12em] uppercase text-foggy mb-4">
               Everything Else
             </h2>
 
-            <DroppableContainer id="backlog" className="min-h-[72px]">
+            <DroppableContainer id="backlog" className="min-h-[64px]">
               <SortableContext
                 items={state.backlog.map((t) => t.id)}
                 strategy={verticalListSortingStrategy}
               >
                 {state.backlog.length === 0 ? (
-                  <div className="rounded-2xl border-2 border-dashed border-border bg-white p-8 text-center">
+                  <div className="rounded-2xl border-2 border-dashed border-[#E8E8F0] p-7 text-center">
                     <p className="text-sm text-foggy">
                       {state.priorities.length > 0
                         ? "You're focused — nothing else on the list"
@@ -263,12 +280,17 @@ export default function App() {
                   </div>
                 ) : (
                   state.backlog.map((task) => (
-                    <TaskCard key={task.id} task={task} onDelete={deleteTask} />
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onDelete={deleteTask}
+                      onOpen={setSelectedTaskId}
+                    />
                   ))
                 )}
               </SortableContext>
             </DroppableContainer>
-          </section>
+          </div>
 
           <DragOverlay dropAnimation={null}>
             {activeTask ? (
@@ -280,7 +302,7 @@ export default function App() {
         </DndContext>
 
         {/* ── Add Task ── */}
-        <div className="mt-8 flex gap-3">
+        <div className="mt-5 flex gap-3">
           <input
             ref={inputRef}
             type="text"
@@ -288,18 +310,27 @@ export default function App() {
             onChange={(e) => setNewTaskText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addTask()}
             placeholder="Add a task to your list..."
-            className="flex-1 px-4 py-3 rounded-xl border border-border bg-white text-sm text-babu placeholder-foggy focus:outline-none focus:ring-2 focus:ring-rausch focus:border-transparent shadow-card transition-shadow"
+            className="flex-1 px-4 py-3 rounded-2xl border border-white bg-white/80 backdrop-blur-sm text-sm text-babu placeholder-foggy focus:outline-none focus:ring-2 focus:ring-rausch focus:border-transparent shadow-card transition-shadow"
           />
           <button
             onClick={addTask}
             disabled={!newTaskText.trim()}
-            className="px-5 py-3 bg-rausch hover:bg-hof active:scale-95 disabled:bg-[#EBEBEB] disabled:text-foggy disabled:cursor-not-allowed text-white font-semibold rounded-xl text-sm transition-all shadow-card flex items-center gap-1.5 whitespace-nowrap"
+            className="px-5 py-3 bg-rausch hover:bg-hof active:scale-95 disabled:bg-white/60 disabled:text-foggy disabled:cursor-not-allowed text-white font-semibold rounded-2xl text-sm transition-all shadow-card flex items-center gap-1.5 whitespace-nowrap"
           >
             <Plus size={16} strokeWidth={2.5} />
             Add
           </button>
         </div>
       </main>
+
+      {/* ── Task Detail Modal ── */}
+      {selectedTask && (
+        <TaskDetail
+          task={selectedTask}
+          onClose={() => setSelectedTaskId(null)}
+          onUpdate={updateTaskDescription}
+        />
+      )}
     </div>
   )
 }
