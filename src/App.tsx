@@ -58,7 +58,6 @@ export default function App() {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Keep a ref always in sync so event handlers read fresh state
   const stateRef = useRef(state)
   useLayoutEffect(() => {
     stateRef.current = state
@@ -87,32 +86,21 @@ export default function App() {
     setActiveTask(task ?? null)
   }
 
-  // onDragOver: live preview when crossing between containers
   function handleDragOver({ active, over }: DragOverEvent) {
     if (!over || active.id === over.id) return
-
     const activeContainer = findContainer(active.id)
     const overContainer = findContainer(over.id)
-
     if (!activeContainer || !overContainer || activeContainer === overContainer) return
 
     setState((prev) => {
       const sourceItems = [...prev[activeContainer]]
       const destItems = [...prev[overContainer]]
-
       const sourceIdx = sourceItems.findIndex((t) => t.id === active.id)
       if (sourceIdx < 0) return prev
-
       const [moved] = sourceItems.splice(sourceIdx, 1)
-
-      // Enforce priority cap
-      if (overContainer === 'priorities' && destItems.length >= MAX_PRIORITIES) {
-        return prev
-      }
-
+      if (overContainer === 'priorities' && destItems.length >= MAX_PRIORITIES) return prev
       const overIdx = destItems.findIndex((t) => t.id === over.id)
       destItems.splice(overIdx >= 0 ? overIdx : destItems.length, 0, moved)
-
       return {
         priorities: activeContainer === 'priorities' ? sourceItems : destItems,
         backlog: activeContainer === 'backlog' ? sourceItems : destItems,
@@ -120,19 +108,14 @@ export default function App() {
     })
   }
 
-  // onDragEnd: finalize same-container reorder (cross-container was handled in onDragOver)
   function handleDragEnd({ active, over }: DragEndEvent) {
     setActiveTask(null)
     if (!over || active.id === over.id) return
-
     const activeContainer = findContainer(active.id)
     const overContainer = findContainer(over.id)
-
     if (!activeContainer || !overContainer) return
 
     if (activeContainer !== overContainer) {
-      // Cross-container drop on an empty container (over.id is container id itself)
-      // onDragOver already handled item-over-item cases; this handles the empty zone case
       setState((prev) => {
         const sourceItems = [...prev[activeContainer]]
         const destItems = [...prev[overContainer]]
@@ -149,7 +132,6 @@ export default function App() {
       return
     }
 
-    // Same container: final reorder
     setState((prev) => {
       const items = prev[activeContainer]
       const oldIdx = items.findIndex((t) => t.id === active.id)
@@ -185,16 +167,30 @@ export default function App() {
   const atCap = prioritiesCount >= MAX_PRIORITIES
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      {/* Header */}
-      <header className="bg-slate-900 text-white px-6 py-5 shadow-lg">
-        <div className="max-w-lg mx-auto">
-          <h1 className="text-2xl font-bold tracking-tight">Priori</h1>
-          <p className="text-slate-400 text-sm mt-0.5">{today}</p>
+    <div className="min-h-screen bg-page font-sans">
+      {/* ── Header ── */}
+      <header className="bg-white border-b border-border px-6 py-5">
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-babu tracking-tight">priori</h1>
+              <span className="w-2 h-2 rounded-full bg-rausch" />
+            </div>
+            <p className="text-foggy text-xs mt-0.5 font-medium">{today}</p>
+          </div>
+          <span
+            className={`text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
+              atCap
+                ? 'bg-rausch text-white'
+                : 'bg-page text-foggy border border-border'
+            }`}
+          >
+            {prioritiesCount} / {MAX_PRIORITIES}
+          </span>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-1">
+      <main className="max-w-lg mx-auto px-4 py-7">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -202,31 +198,22 @@ export default function App() {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          {/* ── Priority Zone ── */}
-          <section>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-semibold tracking-widest uppercase text-slate-500">
-                Today's Priorities
-              </h2>
-              <span
-                className={`text-xs font-medium px-2 py-0.5 rounded-full transition-colors ${
-                  atCap
-                    ? 'bg-amber-100 text-amber-700'
-                    : 'bg-slate-200 text-slate-500'
-                }`}
-              >
-                {prioritiesCount} / {MAX_PRIORITIES}
-              </span>
-            </div>
+          {/* ── Today's Focus ── */}
+          <section className="mb-2">
+            <h2 className="text-[11px] font-semibold tracking-[0.12em] uppercase text-rausch mb-3">
+              Today's Focus
+            </h2>
 
-            <DroppableContainer id="priorities" className="min-h-[64px]">
+            <DroppableContainer id="priorities" className="min-h-[72px]">
               <SortableContext
                 items={state.priorities.map((t) => t.id)}
                 strategy={verticalListSortingStrategy}
               >
                 {state.priorities.length === 0 ? (
-                  <div className="border-2 border-dashed border-amber-200 rounded-xl p-6 text-center text-sm text-slate-400 bg-amber-50/50">
-                    Drag your most important tasks here
+                  <div className="rounded-2xl border-2 border-dashed border-[#FFCDD6] bg-[#FFF5F7] p-8 text-center">
+                    <p className="text-sm text-foggy">
+                      Drag your most important tasks here
+                    </p>
                   </div>
                 ) : (
                   state.priorities.map((task, i) => (
@@ -243,30 +230,36 @@ export default function App() {
           </section>
 
           {/* ── The Line ── */}
-          <div className="flex items-center gap-3 py-4">
-            <div className="flex-1 h-px bg-slate-300" />
-            <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-400 select-none">
-              The Line
-            </span>
-            <div className="flex-1 h-px bg-slate-300" />
+          <div className="flex items-center gap-3 py-6">
+            <div className="flex-1 h-px bg-border" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-white shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#DDDDDD]" />
+              <span className="text-[10px] font-bold tracking-[0.18em] uppercase text-foggy select-none">
+                The Line
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#DDDDDD]" />
+            </div>
+            <div className="flex-1 h-px bg-border" />
           </div>
 
-          {/* ── Backlog ── */}
+          {/* ── Everything Else ── */}
           <section>
-            <h2 className="text-xs font-semibold tracking-widest uppercase text-slate-500 mb-3">
+            <h2 className="text-[11px] font-semibold tracking-[0.12em] uppercase text-foggy mb-3">
               Everything Else
             </h2>
 
-            <DroppableContainer id="backlog" className="min-h-[64px]">
+            <DroppableContainer id="backlog" className="min-h-[72px]">
               <SortableContext
                 items={state.backlog.map((t) => t.id)}
                 strategy={verticalListSortingStrategy}
               >
                 {state.backlog.length === 0 ? (
-                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-sm text-slate-400">
-                    {state.priorities.length > 0
-                      ? 'Nothing else — you\'re focused!'
-                      : 'Add tasks below to get started'}
+                  <div className="rounded-2xl border-2 border-dashed border-border bg-white p-8 text-center">
+                    <p className="text-sm text-foggy">
+                      {state.priorities.length > 0
+                        ? "You're focused — nothing else on the list"
+                        : 'Add tasks below to get started'}
+                    </p>
                   </div>
                 ) : (
                   state.backlog.map((task) => (
@@ -279,7 +272,7 @@ export default function App() {
 
           <DragOverlay dropAnimation={null}>
             {activeTask ? (
-              <div className="bg-white border border-slate-200 shadow-2xl rounded-xl px-4 py-3 text-sm text-slate-700 cursor-grabbing rotate-1 opacity-95">
+              <div className="bg-white rounded-2xl px-4 py-3.5 text-sm font-medium text-babu shadow-overlay cursor-grabbing rotate-1 opacity-95">
                 {activeTask.text}
               </div>
             ) : null}
@@ -287,7 +280,7 @@ export default function App() {
         </DndContext>
 
         {/* ── Add Task ── */}
-        <div className="pt-4 flex gap-2">
+        <div className="mt-8 flex gap-3">
           <input
             ref={inputRef}
             type="text"
@@ -295,12 +288,12 @@ export default function App() {
             onChange={(e) => setNewTaskText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addTask()}
             placeholder="Add a task to your list..."
-            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent shadow-sm"
+            className="flex-1 px-4 py-3 rounded-xl border border-border bg-white text-sm text-babu placeholder-foggy focus:outline-none focus:ring-2 focus:ring-rausch focus:border-transparent shadow-card transition-shadow"
           />
           <button
             onClick={addTask}
             disabled={!newTaskText.trim()}
-            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm flex items-center gap-1.5"
+            className="px-5 py-3 bg-rausch hover:bg-hof active:scale-95 disabled:bg-[#EBEBEB] disabled:text-foggy disabled:cursor-not-allowed text-white font-semibold rounded-xl text-sm transition-all shadow-card flex items-center gap-1.5 whitespace-nowrap"
           >
             <Plus size={16} strokeWidth={2.5} />
             Add
