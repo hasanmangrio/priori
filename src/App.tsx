@@ -26,28 +26,18 @@ function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-function DroppableContainer({
-  id,
-  children,
-  className,
-}: {
-  id: ContainerId
-  children: React.ReactNode
-  className?: string
+function DroppableContainer({ id, children, className }: {
+  id: ContainerId; children: React.ReactNode; className?: string
 }) {
   const { setNodeRef } = useDroppable({ id })
   return <div ref={setNodeRef} className={className}>{children}</div>
 }
 
-const defaultState: AppState = { priorities: [], backlog: [] }
-
 function loadState(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : defaultState
-  } catch {
-    return defaultState
-  }
+    return raw ? JSON.parse(raw) : { priorities: [], backlog: [] }
+  } catch { return { priorities: [], backlog: [] } }
 }
 
 export default function App() {
@@ -56,17 +46,12 @@ export default function App() {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
   const stateRef = useRef(state)
   useLayoutEffect(() => { stateRef.current = state })
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  }, [state])
+  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) }, [state])
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
-    // Touch: 200ms hold = drag; quick tap = click (fixes description on mobile)
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
   )
 
@@ -79,20 +64,17 @@ export default function App() {
   }, [])
 
   function handleDragStart({ active }: DragStartEvent) {
-    const container = findContainer(active.id)
-    if (!container) return
-    setActiveTask(stateRef.current[container].find((t) => t.id === active.id) ?? null)
+    const c = findContainer(active.id)
+    if (!c) return
+    setActiveTask(stateRef.current[c].find((t) => t.id === active.id) ?? null)
   }
 
   function handleDragOver({ active, over }: DragOverEvent) {
     if (!over || active.id === over.id) return
-    const ac = findContainer(active.id)
-    const oc = findContainer(over.id)
+    const ac = findContainer(active.id), oc = findContainer(over.id)
     if (!ac || !oc || ac === oc) return
-
     setState((prev) => {
-      const src = [...prev[ac]]
-      const dst = [...prev[oc]]
+      const src = [...prev[ac]], dst = [...prev[oc]]
       const si = src.findIndex((t) => t.id === active.id)
       if (si < 0) return prev
       const [moved] = src.splice(si, 1)
@@ -106,24 +88,19 @@ export default function App() {
   function handleDragEnd({ active, over }: DragEndEvent) {
     setActiveTask(null)
     if (!over || active.id === over.id) return
-    const ac = findContainer(active.id)
-    const oc = findContainer(over.id)
+    const ac = findContainer(active.id), oc = findContainer(over.id)
     if (!ac || !oc) return
-
     if (ac !== oc) {
       setState((prev) => {
-        const src = [...prev[ac]]
-        const dst = [...prev[oc]]
+        const src = [...prev[ac]], dst = [...prev[oc]]
         const si = src.findIndex((t) => t.id === active.id)
-        if (si < 0) return prev
-        if (oc === 'priorities' && dst.length >= MAX_PRIORITIES) return prev
+        if (si < 0 || (oc === 'priorities' && dst.length >= MAX_PRIORITIES)) return prev
         const [moved] = src.splice(si, 1)
         dst.push(moved)
         return { priorities: ac === 'priorities' ? src : dst, backlog: ac === 'backlog' ? src : dst }
       })
       return
     }
-
     setState((prev) => {
       const items = prev[ac]
       const oi = items.findIndex((t) => t.id === active.id)
@@ -136,10 +113,7 @@ export default function App() {
   function addTask() {
     const text = newTaskText.trim()
     if (!text) return
-    setState((prev) => ({
-      ...prev,
-      backlog: [...prev.backlog, { id: generateId(), text, createdAt: Date.now() }],
-    }))
+    setState((prev) => ({ ...prev, backlog: [...prev.backlog, { id: generateId(), text, createdAt: Date.now() }] }))
     setNewTaskText('')
     inputRef.current?.focus()
   }
@@ -162,135 +136,137 @@ export default function App() {
     ? [...state.priorities, ...state.backlog].find((t) => t.id === selectedTaskId) ?? null
     : null
 
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric',
-  })
-
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
   const prioritiesCount = state.priorities.length
   const atCap = prioritiesCount >= MAX_PRIORITIES
 
   return (
-    <div className="min-h-screen bg-cream font-sans">
-
-      {/* ── Header ── */}
-      <header className="px-5 pt-8 pb-5">
-        <div className="max-w-lg mx-auto flex items-start justify-between">
+    // ── Periwinkle outer shell ──
+    <div
+      className="min-h-screen flex items-start justify-center p-4 sm:p-8 font-sans"
+      style={{ background: 'linear-gradient(145deg, #8E9BD4 0%, #A8AEDE 50%, #C0B8E4 100%)' }}
+    >
+      {/* ── App window ── */}
+      <div
+        className="w-full max-w-xl rounded-app shadow-app overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #FFFFFF 0%, #F9F8FF 55%, #FFF7F5 100%)' }}
+      >
+        {/* ── Header ── */}
+        <header className="px-7 pt-7 pb-4 flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-2xl font-bold text-ink tracking-tight">priori</span>
-              <span className="w-2 h-2 rounded-full bg-clay mt-1" />
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-xl font-bold text-ink tracking-tight">priori</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-clay mt-0.5" />
             </div>
             <p className="text-mist text-xs font-medium">{today}</p>
           </div>
-
           <div className="text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-mist mb-0.5">Focus</p>
-            <p className={`text-2xl font-bold leading-none ${atCap ? 'text-clay' : 'text-ink'}`}>
-              {prioritiesCount}<span className="text-fog text-lg font-medium">/{MAX_PRIORITIES}</span>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-mist leading-none mb-1">Focus</p>
+            <p className={`text-xl font-bold leading-none ${atCap ? 'text-clay' : 'text-ink'}`}>
+              {prioritiesCount}<span className="text-fog text-base font-normal">/{MAX_PRIORITIES}</span>
             </p>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-lg mx-auto px-4 pb-12">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          {/* ── Today's Focus ── */}
-          <section className="mb-3">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-clay" />
-              <h2 className="text-[11px] font-bold tracking-[0.14em] uppercase text-clay">
-                Today's Focus
-              </h2>
-            </div>
+        {/* ── Divider ── */}
+        <div className="mx-7 h-px bg-line" />
 
-            <DroppableContainer id="priorities" className="min-h-[72px]">
-              <SortableContext items={state.priorities.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-                {state.priorities.length === 0 ? (
-                  <div className="rounded-2xl border-2 border-dashed border-clay/20 bg-clay/5 py-8 text-center">
-                    <p className="text-sm text-mist">Hold & drag tasks here from below</p>
-                  </div>
-                ) : (
-                  state.priorities.map((task, i) => (
-                    <TaskCard key={task.id} task={task} rank={i + 1} onDelete={deleteTask} onOpen={setSelectedTaskId} />
-                  ))
-                )}
-              </SortableContext>
-            </DroppableContainer>
-          </section>
+        <main className="px-7 pt-5 pb-7">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            {/* ── Today's Focus ── */}
+            <section className="mb-1">
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1 h-1 rounded-full bg-clay" />
+                  <h2 className="text-[10px] font-bold tracking-[0.16em] uppercase text-clay">Today's Focus</h2>
+                </div>
+              </div>
 
-          {/* ── The Line ── */}
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-line" />
-            <div className="px-4 py-1.5 rounded-full bg-card border border-line shadow-soft">
-              <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-mist select-none">
+              <DroppableContainer id="priorities" className="min-h-[56px]">
+                <SortableContext items={state.priorities.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                  {state.priorities.length === 0 ? (
+                    <div className="rounded-xl border-2 border-dashed border-clay/25 bg-clay/[0.04] py-6 text-center">
+                      <p className="text-xs text-mist">Drag your most important tasks here</p>
+                    </div>
+                  ) : (
+                    state.priorities.map((task, i) => (
+                      <TaskCard key={task.id} task={task} rank={i + 1} onDelete={deleteTask} onOpen={setSelectedTaskId} />
+                    ))
+                  )}
+                </SortableContext>
+              </DroppableContainer>
+            </section>
+
+            {/* ── The Line ── */}
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 h-px bg-line" />
+              <span className="text-[9px] font-bold tracking-[0.22em] uppercase text-fog select-none px-1">
                 the line
               </span>
-            </div>
-            <div className="flex-1 h-px bg-line" />
-          </div>
-
-          {/* ── Everything Else ── */}
-          <section className="mb-3">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-fog" />
-              <h2 className="text-[11px] font-bold tracking-[0.14em] uppercase text-mist">
-                Everything Else
-              </h2>
+              <div className="flex-1 h-px bg-line" />
             </div>
 
-            <DroppableContainer id="backlog" className="min-h-[72px]">
-              <SortableContext items={state.backlog.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-                {state.backlog.length === 0 ? (
-                  <div className="rounded-2xl border-2 border-dashed border-line py-8 text-center">
-                    <p className="text-sm text-mist">
-                      {state.priorities.length > 0 ? "Fully focused — nothing else queued" : 'Add tasks below'}
-                    </p>
-                  </div>
-                ) : (
-                  state.backlog.map((task) => (
-                    <TaskCard key={task.id} task={task} onDelete={deleteTask} onOpen={setSelectedTaskId} />
-                  ))
-                )}
-              </SortableContext>
-            </DroppableContainer>
-          </section>
-
-          <DragOverlay dropAnimation={null}>
-            {activeTask ? (
-              <div className="bg-card rounded-2xl px-4 py-4 text-sm font-semibold text-ink shadow-overlay rotate-1 opacity-95">
-                {activeTask.text}
+            {/* ── Everything Else ── */}
+            <section className="mb-4">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <span className="w-1 h-1 rounded-full bg-fog" />
+                <h2 className="text-[10px] font-bold tracking-[0.16em] uppercase text-mist">Everything Else</h2>
               </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
 
-        {/* ── Add Task ── */}
-        <div className="mt-6 flex gap-2.5">
-          <input
-            ref={inputRef}
-            type="text"
-            value={newTaskText}
-            onChange={(e) => setNewTaskText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addTask()}
-            placeholder="New task..."
-            className="flex-1 px-4 py-3.5 rounded-2xl border border-line bg-card text-sm text-ink placeholder-fog focus:outline-none focus:ring-2 focus:ring-clay focus:border-transparent shadow-soft"
-          />
-          <button
-            onClick={addTask}
-            disabled={!newTaskText.trim()}
-            className="px-5 py-3.5 bg-clay hover:bg-ember active:scale-95 disabled:bg-line disabled:text-fog disabled:cursor-not-allowed text-white font-bold rounded-2xl text-sm transition-all shadow-soft flex items-center gap-1.5"
-          >
-            <Plus size={16} strokeWidth={3} />
-            Add
-          </button>
-        </div>
-      </main>
+              <DroppableContainer id="backlog" className="min-h-[56px]">
+                <SortableContext items={state.backlog.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                  {state.backlog.length === 0 ? (
+                    <div className="rounded-xl border-2 border-dashed border-line py-6 text-center">
+                      <p className="text-xs text-mist">
+                        {state.priorities.length > 0 ? "Fully focused — nothing else queued" : 'Add tasks below to get started'}
+                      </p>
+                    </div>
+                  ) : (
+                    state.backlog.map((task) => (
+                      <TaskCard key={task.id} task={task} onDelete={deleteTask} onOpen={setSelectedTaskId} />
+                    ))
+                  )}
+                </SortableContext>
+              </DroppableContainer>
+            </section>
+
+            <DragOverlay dropAnimation={null}>
+              {activeTask ? (
+                <div className="bg-white rounded-xl px-4 py-2.5 text-sm font-semibold text-ink shadow-overlay rotate-1 opacity-95">
+                  {activeTask.text}
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+
+          {/* ── Add Task ── */}
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={newTaskText}
+              onChange={(e) => setNewTaskText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addTask()}
+              placeholder="Add a task to your list..."
+              className="flex-1 px-3.5 py-2.5 rounded-xl border border-line bg-white text-sm text-ink placeholder-fog focus:outline-none focus:ring-2 focus:ring-clay/40 focus:border-clay/30 shadow-soft transition-shadow"
+            />
+            <button
+              onClick={addTask}
+              disabled={!newTaskText.trim()}
+              className="px-4 py-2.5 bg-clay hover:bg-ember active:scale-95 disabled:bg-line disabled:text-fog disabled:cursor-not-allowed text-white font-semibold rounded-xl text-sm transition-all shadow-soft flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              Add
+            </button>
+          </div>
+        </main>
+      </div>
 
       {/* ── Task Detail Modal ── */}
       {selectedTask && (
